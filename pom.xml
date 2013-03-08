@@ -1,0 +1,49 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+     | POM Relationships
+     -->
+
+    <parent>
+        <groupId>net.codjo.pom</groupId>
+        <artifactId>codjo-pom-library</artifactId>
+        <version>SNAPSHOT</version>
+    </parent>
+    <groupId>net.codjo.documentation</groupId>
+    <artifactId>codjo-tools-confluence-to-markdown</artifactId>
+    <version>1.00-SNAPSHOT</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.codjo.confluence</groupId>
+            <artifactId>codjo-confluence</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.codjo.test</groupId>
+            <artifactId>codjo-test-common</artifactId>
+        </dependency>
+    </dependencies>
+
+    <!--
+    | Project Information
+    -->
+
+    <name>Lib &gt; Composant Migration de la documentation</name>
+    <description>Composant de migration de la documentation Confluence vers le wiki github.
+    </description>
+    <inceptionYear>2013</inceptionYear>
+
+    <!--
+    | Build Settings
+    -->
+
+    <scm>
+        <connection>scm:git:https://github.com/marcona/codjo-tools-confluence-to-markdown.git</connection>
+        <developerConnection>scm:git:https://github.com/marcona/codjo-tools-confluence-to-markdown.git</developerConnection>
+        <url>https://github.com/marcona/codjo-tools-confluence-to-markdown</url>
+    </scm>
+
+</project>

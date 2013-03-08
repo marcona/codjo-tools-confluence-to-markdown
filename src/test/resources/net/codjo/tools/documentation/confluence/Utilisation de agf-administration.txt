@@ -1,0 +1,99 @@
+h2. Description
+
+Cette page décrit les différentes fonctionnalités du plugin d'administration.
+
+
+h2. Fonctionnalités
+
+* Arrêt/relance des plugins du serveur,
+* Visualisation des logs,
+* Audit sur les handlers et/ou la mémoire.
+
+h2. Mise en place rapide
+
+# Activation de l'audit des handlers
+{code:java}
+public MyApplicationServerPlugin(AdministrationServerPlugin administration) {
+    administration.getConfiguration().setRecordHandlerStatistics(true);
+}
+{code}
+# Activation de l'audit de la mémoire
+{code:java}
+public MyApplicationServerPlugin(AdministrationServerPlugin administration) {
+    administration.getConfiguration().recordMemoryUsage(true);
+}
+{code}
+# Paramétrage du répertoire de log
+{code:xml|title=idea.xml}
+<execConfiguration>
+    <name>Serveur</name>
+    <description>Lance le serveur</description>
+    <execClass>${serverMainClass}</execClass>
+    <vmParameter>-Dlog.dir="c:/dev/user/temp" -Dlog4j.configuration="file:${user.home}/log4j.properties"</vmParameter>
+    ...
+</execConfiguration>
+{code}
+
+
+h2. Configuration avancée
+
+h3. Répertoire de log
+Un répertoire de log doit être spécifié pour pouvoir visualiser les logs du serveur.
+De plus, les différents audits sont regroupés dans un fichier {{audit.log}} dans ce même répertoire.
+
+Ce répertoire peut-être spécifié de différentes manières, par priorité décroissante :
+* Via le server-config.properties en ajoutant la propriété suivante :
+{code}
+AdministrationService.auditDestinationDir = ${log.dir}
+{code}
+* Via la configuration {{AdministrationServerConfiguration}} :
+{code:java}
+public MyApplicationServerPlugin(AdministrationServerPlugin administration) {
+    administration.getConfiguration().setAuditDestinationDir("c:\\dev\\user\\temp");
+}
+{code}
+* Via l'argument JVM {{-Dlog.dir=...}} (ce paramètre est déjà spécifié dans les scripts de démarrage des serveurs Unix)
+* Via l'IHM dans l'onglet "Pilotage".
+
+h3. Audit
+
+Les différents audits peuvent être activés/désactivés dynamiquement via l'IHM du plugin d'administration mais aussi de façon statique comme décrit ci-dessous.
+
+h4. Audit des handlers
+Le plugin {{AdministrationServerPlugin}} offre la possibilité de configurer l'audit des {{handlers}}.
+
+Cette configuration est rendue possible des trois manières suivantes :
+* server-config.properties :
+{code:xml}
+AdministrationService.recordHandlerStatistics = true
+{code}
+
+* AdministrationServerConfiguration :
+{code:java}
+public MyApplicationServerPlugin(AdministrationServerPlugin administration) {
+    administration.getConfiguration().setRecordHandlerStatistics(true);
+}
+{code}
+* Via l'IHM dans l'onglet "Pilotage".
+
+h4. Audit de la mémoire
+La lib {{agf-administration}} permet de sauvegarder périodiquement les statistiques d'utilisation mémoire.
+Par défaut, un relevé est fait toutes les 5 min. Ce relevé comprend la mémoire utilisée ainsi que la mémoire totale.
+
+Cet audit est désactivé par défaut. L'activation peut-être faite des trois manières suivantes :
+* server-config.properties :
+{code:xml}
+AdministrationService.recordMemoryUsage = true
+{code}
+
+* AdministrationServerConfiguration :
+{code:java}
+public MyApplicationServerPlugin(AdministrationServerPlugin administration) {
+    administration.getConfiguration().recordMemoryUsage(true);
+}
+{code}
+* Via l'IHM dans l'onglet "Pilotage".
+
+
+
+

@@ -1,0 +1,19 @@
+{library-idcard:agf-administration|family=Plugin AGF|useSecurity=true}
+Cette librairie permet de gérer les serveurs applicatifs.
+{library-idcard}
+
+h2. Mise en place
+
+* [Intégration|Mise en place de agf-administration] dans une application
+* [Utilisation|Utilisation de agf-administration] du composant
+* Guide utilisateur des [IHM d'administration|Guide Utilisateur IHM de agf-administration]
+
+h2. Utilisation avancée
+
+
+h2. Notes
+
+
+h2. Changelog
+
+{changelogs:agf-administration}
