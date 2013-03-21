@@ -8,11 +8,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.codjo.confluence.Attachment;
 import net.codjo.confluence.ConfluenceException;
-import net.codjo.confluence.DefaultSearchCriteria;
 import net.codjo.confluence.Page;
 import net.codjo.confluence.PageSummary;
-import net.codjo.confluence.SearchCriteria.Match;
-import net.codjo.confluence.SearchResult;
 import net.codjo.confluence.plugin.ConfluenceOperations;
 import net.codjo.confluence.plugin.ConfluencePlugin;
 import net.codjo.util.file.FileUtil;
@@ -29,12 +26,12 @@ public class ConfluenceTranslateTool {
         this.contentModifiers = new ArrayList<ContentModifier>();
         contentModifiers.add(new AttachmentsModifier());
         contentModifiers.add(new AgfToCodjoModifier());
-        contentModifiers.add(new ConfluenceLibraryHeaderModifier());
         contentModifiers.add(new HeaderModifier());
         contentModifiers.add(new EndCodeTagModifier());
         contentModifiers.add(new BeginningCodeTagModifier());
         contentModifiers.add(new ConfluenceChangeLogModifier());
         contentModifiers.add(new LinksModifier());
+        contentModifiers.add(new ConfluenceLibraryHeaderModifier());
         contentModifiers.add(new TagAsTableModifier("note", "warning.gif", "#FFFFCE"));
         contentModifiers.add(new TagAsTableModifier("warning", "forbidden.gif", "#FFCCCC"));
     }
@@ -51,7 +48,9 @@ public class ConfluenceTranslateTool {
             final File targetDirectory = new File("C:\\dev\\projects\\codjo\\lib\\codjo-administration.wiki");
 
             ConfluenceTranslateTool translator = new ConfluenceTranslateTool(operations);
-            translator.translate(operations, targetDirectory);
+            final String confluenceLibraryPage = "agf-administration";
+
+            translator.translate(operations, targetDirectory, confluenceLibraryPage);
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -71,23 +70,37 @@ public class ConfluenceTranslateTool {
     }
 
 
-    void translate(ConfluenceOperations operations, File targetDirectory)
+    void translate(ConfluenceOperations operations, File targetDirectory, final String confluenceLibraryPage)
           throws ConfluenceException, IOException {
-        Page libraryMainPage = operations.getPage("framework", "agf-administration");
+        Page libraryMainPage = operations.getPage("framework", confluenceLibraryPage);
         convertToWiki(libraryMainPage, targetDirectory);
     }
 
 
-    void changeLog() throws ConfluenceException {
-        final DefaultSearchCriteria searchCriteria = new DefaultSearchCriteria();
-        searchCriteria
-//              .withCriteria("type", "blogpost", Match.exact)
-              .withCriteria("label", "framework", Match.exact);
+    // Method doesn't work, we need a dedicated method in codjo-confluence
+    void generateIssuesFromChangelog(final String spaceKey, final String label, final String libraryName)
+          throws ConfluenceException {
+/*        final List<BlogEntry> pagesByLabel = operations.getBlogEntriesByLabel(spaceKey, label);
+        final Map<String, List<BlogEntry>> resultMap = new HashMap<String, List<BlogEntry>>();
 
-        final List<SearchResult> pagesByLabel = operations.searchByCriteria("framework", searchCriteria, 100);
-        for (SearchResult page : pagesByLabel) {
-            System.out.println("page.getTitle() = " + page.getTitle());
-        }
+        for (BlogEntry blogEntry : pagesByLabel) {
+            if (blogEntry.getTitle().startsWith(libraryName)) {
+                //Marche bien mais tres long TODO a décommenter
+//            final BlogEntrySummary framework = operations.getBlogEntrySummary(spaceKey, blogEntry.getId());
+//            System.out.println("blogEntry.getPublishDate() = " + framework.getPublishDate());
+
+                final List<Label> labelsById = operations.getLabelsById(blogEntry.getId());
+                String frameworkLabel = null;
+                for (Label label1 : labelsById) {
+                    if (label1.getName().startsWith("framework")) {
+                        frameworkLabel = label1.getName();
+                    }
+                }
+                //TODO Attention aux doublons : eg 1.93 et 1.112
+                System.out.println("frameworkLabel = " + frameworkLabel);
+                System.out.println("\tblogEntry.getTitle() = " + blogEntry.getTitle());
+            }
+        }*/
     }
 
 
@@ -115,7 +128,7 @@ public class ConfluenceTranslateTool {
     }
 
 
-    private String applyContentModifiers(String modifiedContent) {
+    String applyContentModifiers(String modifiedContent) {
         for (ContentModifier contentModifier : contentModifiers) {
             modifiedContent = contentModifier.modifyContent(modifiedContent);
         }
@@ -143,11 +156,52 @@ public class ConfluenceTranslateTool {
         }
     }
 
-    private class ConfluenceLibraryHeaderModifier implements ContentModifier {
+    class ConfluenceLibraryHeaderModifier implements ContentModifier {
         public String modifyContent(String initialContent) {
-            String pattern = "\\{library-idcard\\:(.*)\\}(.*)\\{library-idcard\\}";
+            String pattern = "\\{library-idcard\\:(.*)\\}(.*)\\{library-idcard\\}(.*)";
             Matcher matcher = Pattern.compile(pattern, Pattern.DOTALL).matcher(initialContent);
-            return matcher.replaceAll("Detail Panel: $1\r\n$2");
+            if (matcher.matches()) {
+                StringBuilder result = new StringBuilder("\r\n#### Fiche signalétique de ");
+                String confluenceMacroParameters = matcher.group(1);
+                final String[] split = confluenceMacroParameters.split("\\|");
+                String libraryName = split[0];
+                result.append(libraryName).append("\r\n");
+                String description = matcher.group(2);
+                result.append("##### Description").append(description);
+                String familyString = split[1];//family=Plugin AGF
+                result.append("##### Famille\r\n").append(familyString.replace("family=", "")).append("\r\n");
+                result.append("##### Caratéristique");
+
+                result.append("\r\n").append("- ![](wiki/attachments/lightbulb");
+                if (confluenceMacroParameters.contains("useAspect=true")) {
+                    result.append("_on.gif)");
+                    result.append(" [[aspect|aspect in ").append(libraryName).append("]]");
+                }
+                else {
+                    result.append(".gif)").append(" aspect");
+                }
+
+                result.append("\r\n").append("- ![](wiki/attachments/lightbulb");
+                if (confluenceMacroParameters.contains("useSecurity=true")) {
+                    result.append("_on.gif)");
+                    result.append(" [[security|security in ").append(libraryName).append("]]");
+                }
+                else {
+                    result.append(".gif)").append(" security");
+                }
+
+                result.append("\r\n").append("- ![](wiki/attachments/lightbulb");
+                if (confluenceMacroParameters.contains("useWorkflow=true")) {
+                    result.append("_on.gif)");
+                    result.append(" [[workflow|workflow in ").append(libraryName).append("]]");
+                }
+                else {
+                    result.append(".gif)").append(" workflow");
+                }
+                result.append(matcher.group(3));
+                return result.toString();
+            }
+            return initialContent;
         }
     }
 

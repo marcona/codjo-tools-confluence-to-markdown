@@ -78,6 +78,8 @@ class AttachmentDownloader {
         try {
             copyImageToAttachments(attachmentsDirectory, "forbidden.gif");
             copyImageToAttachments(attachmentsDirectory, "warning.gif");
+            copyImageToAttachments(attachmentsDirectory, "lightbulb_on.gif");
+            copyImageToAttachments(attachmentsDirectory, "lightbulb.gif");
         }
         catch (Exception e) {
             e.printStackTrace();

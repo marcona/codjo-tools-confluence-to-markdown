@@ -1,7 +1,13 @@
-Detail Panel: codjo-administration|family=Plugin AGF|useSecurity=true
 
+#### Fiche signalétique de codjo-administration
+##### Description
 Cette librairie permet de gérer les serveurs applicatifs.
-
+##### Famille
+Plugin AGF
+##### Caratéristique
+- ![](wiki/attachments/lightbulb.gif) aspect
+- ![](wiki/attachments/lightbulb_on.gif) [[security|security in codjo-administration]]
+- ![](wiki/attachments/lightbulb.gif) workflow
 
 ## Mise en place
 

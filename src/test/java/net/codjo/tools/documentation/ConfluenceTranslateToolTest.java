@@ -71,6 +71,8 @@ public class ConfluenceTranslateToolTest {
 
         assertFileExist(fixture, "/attachments", "forbidden.gif");
         assertFileExist(fixture, "/attachments", "warning.gif");
+        assertFileExist(fixture, "/attachments", "lightbulb.gif");
+        assertFileExist(fixture, "/attachments", "lightbulb_on.gif");
     }
 
 
@@ -93,6 +95,26 @@ public class ConfluenceTranslateToolTest {
     @Ignore
     public void test_getChangelog() throws Exception {
         ConfluenceTranslateTool migrator = new ConfluenceTranslateTool(operations);
-        migrator.changeLog();
+        migrator.generateIssuesFromChangelog("framework", "agf-administration", "agf-administration");
+    }
+
+
+    @Test
+    public void test_confluenceLibraryHeader() throws Exception {
+        ConfluenceTranslateTool migrator = new ConfluenceTranslateTool(operations);
+        String modifiedContent = migrator.applyContentModifiers(
+              "{library-idcard:agf-administration|family=Plugin AGF|useSecurity=true}\n"
+              + "Cette librairie permet de gérer les serveurs applicatifs.\n"
+              + "{library-idcard}");
+
+        assertThat(modifiedContent,is("\r\n#### Fiche signalétique de codjo-administration\r\n"
+                                      + "##### Description\n"
+                                      + "Cette librairie permet de gérer les serveurs applicatifs.\n"
+                                      + "##### Famille\r\n"
+                                      + "Plugin AGF\r\n"
+                                      + "##### Caratéristique\r\n"
+                                      + "- ![](wiki/attachments/lightbulb.gif) aspect\r\n"
+                                      + "- ![](wiki/attachments/lightbulb_on.gif) [[security|security in codjo-administration]]\r\n"
+                                      + "- ![](wiki/attachments/lightbulb.gif) workflow"));
     }
 }
