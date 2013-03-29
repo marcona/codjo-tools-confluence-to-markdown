@@ -9,12 +9,13 @@ To run the tool, you have to precise the following maven properties :
 
 
 TODO :
- * unit test modifiers
- * deal with dead links (wiki link that is declared but doesn't exist)
+ * {{pom.xml}} not traducted
+ * add unit tests foreach modifier
+ * verify dead links management (unexisting wiki pages)
  * deal with arguments : outputPath, main page name ...etc
  * iterate on all codjo libraries, plugin and tools
- * {{pom.xml}} not traducted
- * insert news history and pull request in changelog
+ * enhance unit test by creating a mock confluence server ? see : https://developer.atlassian.com/display/CONFDEV/Writing+Unit+Tests+for+your+Plugin
+ * insert confluence news history and pull request in changelog
     - to deal with old news :
       - in codjo-confluence
         Add search method for blogposts in ConfluenceOperations:
@@ -31,8 +32,6 @@ TODO :
           See how to deal with framework versions (nb: github issues have "labels")
     - OR just make an html export from confluence ??
 
- * Decide wether or not we translate the header menu "project reports | svn | recherche | mantis"
- * enhance unit test by creating a mock confluence server?
 
  * automatic upload of wiki on github
      - create wiki repository (only by the website cause github API can't deal with wiki site, should use release-test or Httpunit ?)
@@ -55,6 +54,8 @@ TODO :
 
  
  DONE :
+     - Decide wether or not we translate the header menu "project reports | svn | recherche | mantis" --> not for the moment I don't want
+        our sic to be publicly known ;-)
      - Detail panel to implement (with library name, security support and plugin
      - copy forbidden.gif and warning.gif to attachments
      - rename library to confluence-to-markdown
