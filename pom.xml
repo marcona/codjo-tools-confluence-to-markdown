@@ -40,6 +40,43 @@
     | Build Settings
     -->
 
+   <profiles>
+        <profile>
+            <id>codjo</id>
+            <repositories>
+                <repository>
+                    <id>codjo</id>
+                    <url>http://repo.codjo.net/maven2/inhouse</url>
+                </repository>
+                <repository>
+                    <id>codjo-snapshot</id>
+                    <url>http://repo.codjo.net/maven2/inhouse-snapshot</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+                <repository>
+                    <id>codjo-external</id>
+                    <url>http://repo.codjo.net/maven2/external</url>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>codjo-plugin</id>
+                    <url>http://repo.codjo.net/maven2/inhouse</url>
+                </pluginRepository>
+                <pluginRepository>
+                    <id>codjo-external-plugin</id>
+                    <url>http://repo.codjo.net/maven2/external</url>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
+
+    
     <scm>
         <connection>scm:git:https://github.com/marcona/codjo-tools-confluence-to-markdown.git</connection>
         <developerConnection>scm:git:https://github.com/marcona/codjo-tools-confluence-to-markdown.git</developerConnection>
