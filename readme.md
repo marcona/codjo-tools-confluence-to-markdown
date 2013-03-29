@@ -1,4 +1,4 @@
-Framework codjo.net
+Part of the Framework codjo.net
 ===================
 
 This is a small tool to translate Confluence wiki content to Github wiki content.
@@ -6,6 +6,9 @@ To run the tool, you have to precise the following maven properties :
 - confluencePrdUrl
 - confluencePrdUser
 - confluencePrdPassword
+
+You'll have to add the following repository :
+   https://github.com/gonnot/codjo-install-workstation/blob/master/common/m2/settings.xml
 
 
 TODO :
