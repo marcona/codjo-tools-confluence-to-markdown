@@ -4,7 +4,7 @@ Cette page décrit comment installer et configurer le plugin d'administration da
 
 ### Configuration serveur
 
-Déclaration de la dépendance dans le {{pom.xml}} du projet
+Déclaration de la dépendance dans le ```pom.xml``` du projet
 ```xml
 <dependency>
     <groupId>net.codjo.administration</groupId>
@@ -23,7 +23,7 @@ server.addPlugin(AdministrationServerPlugin.class);
 
 ### Configuration IHM
 
-Déclaration de la dépendance dans le {{pom.xml}} du projet
+Déclaration de la dépendance dans le ```pom.xml``` du projet
 ```xml
 <dependency>
     <groupId>net.codjo.administration</groupId>
@@ -43,4 +43,4 @@ Il suffit d'ajouter les actions suivantes dans votre menu.
 ```xml
 <menu plugin="net.codjo.administration.gui.plugin.AdministrationGuiPlugin" actionId="AdministrationAction"/>
 ```
-+NB+ : Les utilisateurs devant administrer les plugins doivent posséder un rôle ayant la fonction {{administrate-server}} (cf. [security in codjo-administration]).
++NB+ : Les utilisateurs devant administrer les plugins doivent posséder un rôle ayant la fonction ```administrate-server``` (cf. [security in codjo-administration]).

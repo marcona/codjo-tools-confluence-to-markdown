@@ -1,18 +1,23 @@
 package net.codjo.tools.documentation;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.codjo.confluence.Attachment;
+import net.codjo.confluence.BlogEntry;
 import net.codjo.confluence.ConfluenceException;
+import net.codjo.confluence.Label;
 import net.codjo.confluence.Page;
 import net.codjo.confluence.PageSummary;
 import net.codjo.confluence.plugin.ConfluenceOperations;
 import net.codjo.confluence.plugin.ConfluencePlugin;
 import net.codjo.util.file.FileUtil;
+import net.codjo.util.system.WindowsExec;
 /**
  *
  */
@@ -27,6 +32,7 @@ public class ConfluenceTranslateTool {
         contentModifiers.add(new AttachmentsModifier());
         contentModifiers.add(new AgfToCodjoModifier());
         contentModifiers.add(new HeaderModifier());
+        contentModifiers.add(new InlineCodeTagModifier());
         contentModifiers.add(new EndCodeTagModifier());
         contentModifiers.add(new BeginningCodeTagModifier());
         contentModifiers.add(new ConfluenceChangeLogModifier());
@@ -34,26 +40,30 @@ public class ConfluenceTranslateTool {
         contentModifiers.add(new ConfluenceLibraryHeaderModifier());
         contentModifiers.add(new TagAsTableModifier("note", "warning.gif", "#FFFFCE"));
         contentModifiers.add(new TagAsTableModifier("warning", "forbidden.gif", "#FFCCCC"));
+        contentModifiers.add(new WikiTableModifier());
     }
 
 
     public static void main(String[] args) {
+        final String confluenceLibraryName;
+        final File targetDirectory;
+        if (args.length == 2) {
+            confluenceLibraryName = args[0];
+            String destinationDirectory = args[1];
+            targetDirectory = new File(destinationDirectory);
+        }
+        else {
+            throw new IllegalArgumentException("You should have two arguments.");
+        }
+
         ConfluencePlugin plugin = new ConfluencePlugin();
         try {
             configurePlugin(plugin, ConfluenceTranslateTool.class);
-
             plugin.start(null);
 
             final ConfluenceOperations operations = plugin.getOperations();
-            final File targetDirectory = new File("C:\\dev\\projects\\codjo\\lib\\codjo-administration.wiki");
-
             ConfluenceTranslateTool translator = new ConfluenceTranslateTool(operations);
-            final String confluenceLibraryPage = "agf-administration";
-
-            translator.translate(operations, targetDirectory, confluenceLibraryPage);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
+            translator.translate(targetDirectory, confluenceLibraryName);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -70,37 +80,62 @@ public class ConfluenceTranslateTool {
     }
 
 
-    void translate(ConfluenceOperations operations, File targetDirectory, final String confluenceLibraryPage)
+    void translate(File targetDirectory, final String confluenceLibraryPage)
           throws ConfluenceException, IOException {
-        Page libraryMainPage = operations.getPage("framework", confluenceLibraryPage);
+        final String spaceKey = "framework";
+        Page libraryMainPage = operations.getPage(spaceKey, confluenceLibraryPage);
         convertToWiki(libraryMainPage, targetDirectory);
+        generateIssuesFromChangelog(spaceKey, confluenceLibraryPage, confluenceLibraryPage, "", "");
     }
 
 
-    // Method doesn't work, we need a dedicated method in codjo-confluence
-    void generateIssuesFromChangelog(final String spaceKey, final String label, final String libraryName)
+    void generateIssuesFromChangelog(final String spaceKey,
+                                     final String label,
+                                     final String libraryName,
+                                     String githubAccount, String githubPassword)
           throws ConfluenceException {
-/*        final List<BlogEntry> pagesByLabel = operations.getBlogEntriesByLabel(spaceKey, label);
-        final Map<String, List<BlogEntry>> resultMap = new HashMap<String, List<BlogEntry>>();
+        final List<BlogEntry> pagesByLabel = operations.getBlogEntriesByLabel(spaceKey, label);
 
         for (BlogEntry blogEntry : pagesByLabel) {
+            final String blogEntryTitle = new AgfToCodjoModifier().modifyContent(blogEntry.getTitle());
             if (blogEntry.getTitle().startsWith(libraryName)) {
-                //Marche bien mais tres long TODO a décommenter
-//            final BlogEntrySummary framework = operations.getBlogEntrySummary(spaceKey, blogEntry.getId());
-//            System.out.println("blogEntry.getPublishDate() = " + framework.getPublishDate());
+                try {
+                    final File blogEntryDirectory = new File("target/" + blogEntryTitle);
+                    blogEntryDirectory.mkdir();
 
-                final List<Label> labelsById = operations.getLabelsById(blogEntry.getId());
-                String frameworkLabel = null;
-                for (Label label1 : labelsById) {
-                    if (label1.getName().startsWith("framework")) {
-                        frameworkLabel = label1.getName();
-                    }
+                    final List<Label> labels = operations.getLabelsById(blogEntry.getId());
+                    postIssue(libraryName, githubAccount, githubPassword, blogEntry, blogEntryDirectory, labels);
                 }
-                //TODO Attention aux doublons : eg 1.93 et 1.112
-                System.out.println("frameworkLabel = " + frameworkLabel);
-                System.out.println("\tblogEntry.getTitle() = " + blogEntry.getTitle());
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        }*/
+        }
+    }
+
+
+    protected void postIssue(String libraryName,
+                             String githubAccount,
+                             String githubPassword,
+                             BlogEntry blogEntry,
+                             File blogEntryDirectory, List<Label> labelsById) throws IOException, URISyntaxException {
+
+        final File blogEntryFile = new File(blogEntryDirectory, new URI(blogEntry.getTitle()).toASCIIString());
+        FileUtil.saveContent(blogEntryFile, applyContentModifiers(blogEntry.getContent()));
+
+        WindowsExec executor = new WindowsExec();
+        StringBuilder cmd = new StringBuilder();
+        cmd.append("cmd /c gh postIssue ");
+//        cmd.append(githubAccount).append(" ");
+//        cmd.append(githubPassword).append(" ");
+        cmd.append(libraryName).append(" ");
+        cmd.append(blogEntry.getTitle()).append(" ");
+        cmd.append("closed").append(" ");
+        cmd.append(blogEntryFile.getCanonicalPath());
+        for (Label label : labelsById) {
+            cmd.append(label.getName()).append(" ");
+        }
+        executor.exec(cmd.toString(), blogEntryDirectory);
     }
 
 
@@ -140,6 +175,14 @@ public class ConfluenceTranslateTool {
         String modifyContent(String initialContent);
     }
 
+    private class InlineCodeTagModifier implements ContentModifier {
+        public String modifyContent(String initialContent) {
+            String pattern = "\\{\\{(.*?)\\}\\}";
+            Matcher matcher = Pattern.compile(pattern).matcher(initialContent);
+            return matcher.replaceAll("```$1```");
+        }
+    }
+
     private class BeginningCodeTagModifier implements ContentModifier {
         public String modifyContent(String initialContent) {
             String pattern = "\\{code\\:(.*)\\}(.*)";
@@ -153,6 +196,60 @@ public class ConfluenceTranslateTool {
             String pattern = "\\{changelogs\\:(.*)\\}";
             Matcher matcher = Pattern.compile(pattern).matcher(initialContent);
             return matcher.replaceAll("");
+        }
+    }
+
+    private class WikiTableModifier implements ContentModifier {
+        public String modifyContent(String initialContent) {
+            String pattern = "\\|\\|(.*)\\|\\|(.*?)\\|(.*)\\|(.*?) ";
+            Matcher matcher = Pattern.compile(pattern, Pattern.DOTALL).matcher(initialContent);
+            String columnHeader = "";
+            String columnsContent = "";
+            if (matcher.find()) {
+                columnHeader = matcher.group(1);
+                columnsContent = "|" + matcher.group(3) + "|";
+            }
+            final String[] columnHeaders = columnHeader.split("\\|\\|");
+            final String[] columnContents = columnsContent.split("\n");
+
+            StringBuilder builder = new StringBuilder("<table>\n");
+            builder.append("<th>\n");
+            for (String header : columnHeaders) {
+                builder.append("<td>").append(header.trim()).append("</td>");
+            }
+            builder.append("</th>\n");
+
+            for (String columnContent : columnContents) {
+                String tmpPattern = "\\|(.*)\\|";
+                Matcher tmpMmatcher = Pattern.compile(tmpPattern, Pattern.DOTALL).matcher(columnContent);
+
+                if (tmpMmatcher.find()) {
+                    final String[] lineSplitted = tmpMmatcher.group(1).split(" \\| ");
+                    builder.append("<tr>\n");
+                    for (String columnValue : lineSplitted) {
+                        if (!"".equals(columnValue)) {
+                            builder.append("<td>").append(columnValue.trim()).append("</td>").append("\n");
+                        }
+                    }
+                    builder.append("</tr>\n");
+                }
+            }
+            builder.append("</table>");
+            final String result;
+            try {
+                result = matcher.replaceAll(builder.toString());
+            }
+            catch (Exception e) {
+                System.out
+                      .println("erreur While translating initialContent = " +
+                               initialContent);
+
+                System.out.println("builder.toString( = " + builder.toString());
+                e.printStackTrace();
+
+                return initialContent;
+            }
+            return result;
         }
     }
 
@@ -172,36 +269,33 @@ public class ConfluenceTranslateTool {
                 result.append("##### Famille\r\n").append(familyString.replace("family=", "")).append("\r\n");
                 result.append("##### Caratéristique");
 
-                result.append("\r\n").append("- ![](wiki/attachments/lightbulb");
-                if (confluenceMacroParameters.contains("useAspect=true")) {
-                    result.append("_on.gif)");
-                    result.append(" [[aspect|aspect in ").append(libraryName).append("]]");
-                }
-                else {
-                    result.append(".gif)").append(" aspect");
-                }
+                addCaracteristicFor(result, confluenceMacroParameters, libraryName, "Aspect");
+                addCaracteristicFor(result, confluenceMacroParameters, libraryName, "Security");
+                addCaracteristicFor(result, confluenceMacroParameters, libraryName, "Workflow");
 
-                result.append("\r\n").append("- ![](wiki/attachments/lightbulb");
-                if (confluenceMacroParameters.contains("useSecurity=true")) {
-                    result.append("_on.gif)");
-                    result.append(" [[security|security in ").append(libraryName).append("]]");
-                }
-                else {
-                    result.append(".gif)").append(" security");
-                }
-
-                result.append("\r\n").append("- ![](wiki/attachments/lightbulb");
-                if (confluenceMacroParameters.contains("useWorkflow=true")) {
-                    result.append("_on.gif)");
-                    result.append(" [[workflow|workflow in ").append(libraryName).append("]]");
-                }
-                else {
-                    result.append(".gif)").append(" workflow");
-                }
                 result.append(matcher.group(3));
                 return result.toString();
             }
             return initialContent;
+        }
+
+
+        private void addCaracteristicFor(StringBuilder result,
+                                         String confluenceMacroParameters,
+                                         String libraryName, final String caracteristicName) {
+            result.append("\r\n").append("- ![](wiki/attachments/lightbulb");
+            final String caracteristicInLowerCase = caracteristicName.toLowerCase();
+            if (confluenceMacroParameters.contains("use" + caracteristicName + "=true")) {
+                result.append("_on.gif)");
+                result.append(" [[")
+                      .append(caracteristicInLowerCase)
+                      .append("|")
+                      .append(caracteristicInLowerCase)
+                      .append(" in ").append(libraryName).append("]]");
+            }
+            else {
+                result.append(".gif)").append(" ").append(caracteristicInLowerCase);
+            }
         }
     }
 

@@ -1,9 +1,14 @@
 package net.codjo.tools.documentation;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.List;
+import net.codjo.confluence.BlogEntry;
+import net.codjo.confluence.Label;
 import net.codjo.confluence.Page;
 import net.codjo.confluence.plugin.ConfluenceOperations;
 import net.codjo.confluence.plugin.ConfluencePlugin;
+import net.codjo.test.common.LogString;
 import net.codjo.test.common.fixture.DirectoryFixture;
 import net.codjo.util.file.FileUtil;
 import org.junit.After;
@@ -94,8 +99,48 @@ public class ConfluenceTranslateToolTest {
     @Test
     @Ignore
     public void test_getChangelog() throws Exception {
-        ConfluenceTranslateTool migrator = new ConfluenceTranslateTool(operations);
-        migrator.generateIssuesFromChangelog("framework", "agf-administration", "agf-administration");
+        final LogString logString = new LogString();
+
+        ConfluenceTranslateTool migrator = buildMockConfluenceTranslateTool(logString);
+        migrator.generateIssuesFromChangelog("framework", "agf-administration", "agf-administration", "myGithubAccount",
+                                             "myGithubPassword");
+        logString.assertContent(
+              "postIssue(agf-administration - Internationalization of gui components, [framework-2-19, agf-administration]), "
+              + "postIssue(agf-administration - Environment information, [framework-1-198, agf-administration, hot-topics]), "
+              + "postIssue(agf-administration - Environment information, [framework-1-196, agf-administration]), "
+              + "postIssue(agf-administration - Internationalization bootstrap, [framework-1-184, agf-administration]), "
+              + "postIssue(agf-administration - Bug fix in administration panel, [agf-administration, framework-1-162]), "
+              + "postIssue(agf-administration - Tri de la liste des fichiers de logs, [hot-topics, framework-1-116, agf-administration]), "
+              + "postIssue(agf-administration - Modification dynamique du répertoire de log des audits, [framework-1-113, agf-administration]), "
+              + "postIssue(agf-administration - Accès au guide utilisateur à partir de l'IHM, [framework-1-112, agf-administration]), "
+              + "postIssue(agf-administration - Activation ou désactivation dynamique des audits (handlers et mémoire), [hot-topics, framework-1-112, agf-administration]), "
+              + "postIssue(agf-administration - Configuration du répertoire de log, [framework-1-96, agf-administration]), postIssue(agf-administration - Consultation des logs du serveur, [framework-1-95, agf-administration, hot-topics]), "
+              + "postIssue(agf-administration - Logs sur les handlers, [agf-administration, framework-1-95]), postIssue(agf-administration - Statistiques d'utilisation mémoire, [framework-1-93, agf-administration]), "
+              + "postIssue(agf-administration - Activation des logs sur les handlers, [framework-1-93, agf-administration, hot-topics]), postIssue(agf-administration - Création de la librairie, [agf-administration, framework-1-92, hot-topics])");
+    }
+
+
+    @Test
+    @Ignore
+    public void test_getChangelogReleasetest() throws Exception {
+        final LogString logString = new LogString();
+
+        ConfluenceTranslateTool migrator = buildMockConfluenceTranslateTool(logString);
+        migrator.generateIssuesFromChangelog("framework", "agf-release-test", "agf-release-test", "myGithubAccount",
+                                             "myGithubPassword");
+        logString.assertContent(
+              "postIssue(agf-administration - Internationalization of gui components, [framework-2-19, agf-administration]), "
+              + "postIssue(agf-administration - Environment information, [framework-1-198, agf-administration, hot-topics]), "
+              + "postIssue(agf-administration - Environment information, [framework-1-196, agf-administration]), "
+              + "postIssue(agf-administration - Internationalization bootstrap, [framework-1-184, agf-administration]), "
+              + "postIssue(agf-administration - Bug fix in administration panel, [agf-administration, framework-1-162]), "
+              + "postIssue(agf-administration - Tri de la liste des fichiers de logs, [hot-topics, framework-1-116, agf-administration]), "
+              + "postIssue(agf-administration - Modification dynamique du répertoire de log des audits, [framework-1-113, agf-administration]), "
+              + "postIssue(agf-administration - Accès au guide utilisateur à partir de l'IHM, [framework-1-112, agf-administration]), "
+              + "postIssue(agf-administration - Activation ou désactivation dynamique des audits (handlers et mémoire), [hot-topics, framework-1-112, agf-administration]), "
+              + "postIssue(agf-administration - Configuration du répertoire de log, [framework-1-96, agf-administration]), postIssue(agf-administration - Consultation des logs du serveur, [framework-1-95, agf-administration, hot-topics]), "
+              + "postIssue(agf-administration - Logs sur les handlers, [agf-administration, framework-1-95]), postIssue(agf-administration - Statistiques d'utilisation mémoire, [framework-1-93, agf-administration]), "
+              + "postIssue(agf-administration - Activation des logs sur les handlers, [framework-1-93, agf-administration, hot-topics]), postIssue(agf-administration - Création de la librairie, [agf-administration, framework-1-92, hot-topics])");
     }
 
 
@@ -107,14 +152,120 @@ public class ConfluenceTranslateToolTest {
               + "Cette librairie permet de gérer les serveurs applicatifs.\n"
               + "{library-idcard}");
 
-        assertThat(modifiedContent,is("\r\n#### Fiche signalétique de codjo-administration\r\n"
-                                      + "##### Description\n"
-                                      + "Cette librairie permet de gérer les serveurs applicatifs.\n"
-                                      + "##### Famille\r\n"
-                                      + "Plugin AGF\r\n"
-                                      + "##### Caratéristique\r\n"
-                                      + "- ![](wiki/attachments/lightbulb.gif) aspect\r\n"
-                                      + "- ![](wiki/attachments/lightbulb_on.gif) [[security|security in codjo-administration]]\r\n"
-                                      + "- ![](wiki/attachments/lightbulb.gif) workflow"));
+        assertThat(modifiedContent, is("\r\n#### Fiche signalétique de codjo-administration\r\n"
+                                       + "##### Description\n"
+                                       + "Cette librairie permet de gérer les serveurs applicatifs.\n"
+                                       + "##### Famille\r\n"
+                                       + "Plugin AGF\r\n"
+                                       + "##### Caratéristique\r\n"
+                                       + "- ![](wiki/attachments/lightbulb.gif) aspect\r\n"
+                                       + "- ![](wiki/attachments/lightbulb_on.gif) [[security|security in codjo-administration]]\r\n"
+                                       + "- ![](wiki/attachments/lightbulb.gif) workflow"));
+    }
+
+
+    @Test
+    public void test_inlineCodeTagModifier() throws Exception {
+        ConfluenceTranslateTool migrator = new ConfluenceTranslateTool(operations);
+        String modifiedContent = migrator.applyContentModifiers(
+              "blablaabla\n"
+              + "Cette {{librairie}} permet de gérer {{les}} serveurs applicatifs.\n"
+              + "blablaabla");
+
+        assertThat(modifiedContent, is("blablaabla\n"
+                                       + "Cette ```librairie``` permet de gérer ```les``` serveurs applicatifs.\n"
+                                       + "blablaabla"));
+    }
+
+
+    @Test
+    public void test_wikiTableModifier() throws Exception {
+        ConfluenceTranslateTool migrator = new ConfluenceTranslateTool(operations);
+        String modifiedContent = migrator.applyContentModifiers("blablablaText before\n"
+                                                                + "|| Titre || description || \n"
+                                                                + "| [import|Utilisation de agf-release-test - Exemples#import] | *Exemple typique de test release d'import*. | \n"
+                                                                + "| [broadcast|Utilisation de agf-release-test - Exemples#broadcast] | Exemple typique de test release d'export. | \n"
+                                                                + "\n"
+                                                                + "blablablaText after\n"
+                                                                + "||Propriété || Description || Exemple||\n"
+                                                                + "|*```broadcast.output.dir```*| Répertoire de sortie des exports|```D:/red/release-test/tmp``` |\n"
+                                                                + "|*```broadcast.output.remote.dir```*| Répertoire de sortie des exports pour les tests en mode distant.|```D:/red/release-test/tmp```|"
+                                                                + "\n"
+                                                                + "blablablaText after\n");
+
+        assertThat(modifiedContent, is("blablablaText before\n"
+                                       + "<table>\n"
+                                       + "<th>\n"
+                                       + "<td>Titre</td><td>description</td></th>\n"
+                                       + "<tr>\n"
+                                       + "<td>[[import|Utilisation de codjo-release-test - Exemples#import]]</td>\n"
+                                       + "<td>Exemple typique de test release d'import.</td>\n"
+                                       + "</tr>\n"
+                                       + "<tr>\n"
+                                       + "<td>[[broadcast|Utilisation de codjo-release-test - Exemples#broadcast]]</td>\n"
+                                       + "<td>Exemple typique de test release d'export.</td>\n"
+                                       + "</tr>\n"
+                                       + "</table> \n"
+                                       + "blablablaText after\n"
+                                       + "<table>\n"
+                                       + "<th>\n"
+                                       + "<td>Propriété</td><td>Description</td><td>Exemple</td></th>\n"
+                                       + "<tr>\n"
+                                       + "<td>*```broadcast.output.dir```*</td>\n"
+                                       + "<td>Répertoire de sortie des exports</td>\n"
+                                       + "<td>```D:/red/release-test/tmp```</td>\n"
+                                       + "</tr>\n"
+                                       + "<tr>\n"
+                                       + "<td>*```broadcast.output.remote.dir```*</td>\n"
+                                       + "<td>Répertoire de sortie des exports pour les tests en mode distant.</td>\n"
+                                       + "<td>```D:/red/release-test/tmp```</td>\n"
+                                       + "</tr>\n"
+                                       + "</table> \n\n"
+                                       + "blablablaText after\n"));
+    }
+
+
+    @Test
+    public void test_wikiTableModifierBug() throws Exception {
+        ConfluenceTranslateTool migrator = new ConfluenceTranslateTool(operations);
+        String modifiedContent = migrator.applyContentModifiers("blablablaText before\n"
+                                                                + "||Propriété || Description || Exemple||\n"
+                                                                + "|*```broadcast.output.dir```*| Répertoire de sortie des exports|```D:/red/release-test/tmp``` |\n"
+                                                                + "|*```broadcast.output.remote.dir```*| Répertoire de sortie des exports pour les tests en mode distant.|```D:/red/release-test/tmp```|"
+                                                                + "\n"
+                                                                + "blablablaText after\n");
+
+        assertThat(modifiedContent, is("blablablaText before\n"
+                                       + "<table>\n"
+                                       + "<th>\n"
+                                       + "<td>Titre</td><td>description</td></th>\n"
+                                       + "<tr>\n"
+                                       + "<td>[[import|Utilisation de codjo-release-test - Exemples#import]]</td>\n"
+                                       + "<td>Exemple typique de test release d'import.</td>\n"
+                                       + "</tr>\n"
+                                       + "<tr>\n"
+                                       + "<td>[[broadcast|Utilisation de codjo-release-test - Exemples#broadcast]]</td>\n"
+                                       + "<td>Exemple typique de test release d'export.</td>\n"
+                                       + "</tr>\n"
+                                       + "</table> \n\n"
+                                       + "blablablaText after\n"));
+    }
+
+
+    private ConfluenceTranslateTool buildMockConfluenceTranslateTool(final LogString logString) {
+        return new ConfluenceTranslateTool(operations) {
+            @Override
+            protected void postIssue(String libraryName,
+                                     String githubAccount,
+                                     String githubPassword,
+                                     BlogEntry blogEntry,
+                                     File blogEntryDirectory,
+                                     List<Label> labelsById) throws IOException, URISyntaxException {
+                assertThat(libraryName, is("agf-administration"));
+                assertThat(githubAccount, is("myGithubAccount"));
+                assertThat(githubPassword, is("myGithubPassword"));
+                logString.call("postIssue", blogEntry.getTitle(), labelsById);
+            }
+        };
     }
 }

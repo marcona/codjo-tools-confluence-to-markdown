@@ -14,10 +14,10 @@ You'll also have to add the following repository OR activate the ```codjo``` pro
 NB : ```ConfluenceTranslateToolTest``` is in fact an integration test with our Confluence test server. I should mock the confluence server.
 
 TODO :
- * {{pom.xml}} not traducted
+ * manage wiki table (see Utilisation-de-codjo-release-test)
+ * manage accent in page title
  * add unit tests foreach modifier
  * verify dead links management (unexisting wiki pages)
- * deal with arguments : outputPath, main page name ...etc
  * iterate on all codjo libraries, plugin and tools
  * enhance unit test by creating a mock confluence server ? see : https://developer.atlassian.com/display/CONFDEV/Writing+Unit+Tests+for+your+Plugin
  * insert confluence news history and pull request in changelog
@@ -59,6 +59,8 @@ TODO :
 
  
  DONE :
+     - deal with arguments : outputPath, main page name ...etc
+     - {{pom.xml}} not traducted
      - Decide wether or not we translate the header menu "project reports | svn | recherche | mantis" --> not for the moment I don't want
         our sic to be publicly known ;-)
      - Detail panel to implement (with library name, security support and plugin

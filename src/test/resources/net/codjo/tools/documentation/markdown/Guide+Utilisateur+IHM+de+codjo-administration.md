@@ -24,7 +24,7 @@ Cet onglet liste les fichiers de logs du serveur qui sont visualisables :
 * audit.log (fichier contenant les traces des audits des handlers et/ou de la mémoire si ils sont activés),
 * ....
 
-Pour cela, il suffit de sélectionner le nom du fichier que l'on souhaite visialiser dans la liste déroulante, puis de cliquer sur le bouton {{Afficher}}. Le contenu du fichier apparaît alors dans la zone de texte située en dessous.
+Pour cela, il suffit de sélectionner le nom du fichier que l'on souhaite visialiser dans la liste déroulante, puis de cliquer sur le bouton ```Afficher```. Le contenu du fichier apparaît alors dans la zone de texte située en dessous.
 
 ### Arrêt/Relance des plugins du serveur
 
