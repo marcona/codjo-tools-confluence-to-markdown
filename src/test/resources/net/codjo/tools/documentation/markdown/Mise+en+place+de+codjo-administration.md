@@ -43,4 +43,4 @@ Il suffit d'ajouter les actions suivantes dans votre menu.
 ```xml
 <menu plugin="net.codjo.administration.gui.plugin.AdministrationGuiPlugin" actionId="AdministrationAction"/>
 ```
-+NB+ : Les utilisateurs devant administrer les plugins doivent posséder un rôle ayant la fonction ```administrate-server``` (cf. [security in codjo-administration]).
+<u>NB</u> : Les utilisateurs devant administrer les plugins doivent posséder un rôle ayant la fonction ```administrate-server``` (cf. [security in codjo-administration]).

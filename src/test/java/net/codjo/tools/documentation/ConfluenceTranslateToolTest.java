@@ -18,9 +18,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import static net.codjo.test.common.matcher.JUnitMatchers.*;
-/**
- *
- */
+
 public class ConfluenceTranslateToolTest {
     private static ConfluenceOperations operations;
     DirectoryFixture fixture = DirectoryFixture.newTemporaryDirectoryFixture("markdown");
@@ -179,11 +177,32 @@ public class ConfluenceTranslateToolTest {
 
 
     @Test
+    public void test_boldAndUnderlineModifier() throws Exception {
+        ConfluenceTranslateTool migrator = new ConfluenceTranslateTool(operations);
+        String modifiedContent = migrator.applyContentModifiers(
+              "blablaabla\n"
+              + "Cette *librairie* permet de gérer les serveurs applicatifs.\n"
+              + "Ceci est une +*liste*+\n"
+              + "* point un\n"
+              + "* point deux\n"
+              + "blablaabla");
+
+        assertThat(modifiedContent, is("blablaabla\n"
+                                       + "Cette **librairie** permet de gérer les serveurs applicatifs.\n"
+                                       + "Ceci est une <u>**liste**</u>\n"
+                                       + "* point un\n"
+                                       + "* point deux\n"
+                                       + "blablaabla"
+        ));
+    }
+
+
+    @Test
     public void test_wikiTableModifier() throws Exception {
         ConfluenceTranslateTool migrator = new ConfluenceTranslateTool(operations);
         String modifiedContent = migrator.applyContentModifiers("blablablaText before\n"
                                                                 + "|| Titre || description || \n"
-                                                                + "| [import|Utilisation de agf-release-test - Exemples#import] | *Exemple typique de test release d'import*. | \n"
+                                                                + "| [import|Utilisation de agf-release-test - Exemples#import] | Exemple typique de test release d'import. | \n"
                                                                 + "| [broadcast|Utilisation de agf-release-test - Exemples#broadcast] | Exemple typique de test release d'export. | \n"
                                                                 + "\n"
                                                                 + "blablablaText after\n"
@@ -195,60 +214,33 @@ public class ConfluenceTranslateToolTest {
 
         assertThat(modifiedContent, is("blablablaText before\n"
                                        + "<table>\n"
-                                       + "<th>\n"
-                                       + "<td>Titre</td><td>description</td></th>\n"
                                        + "<tr>\n"
-                                       + "<td>[[import|Utilisation de codjo-release-test - Exemples#import]]</td>\n"
-                                       + "<td>Exemple typique de test release d'import.</td>\n"
+                                       + "<th>Titre</th><th>description</th></tr>\n"
+                                       + "<tr>\n"
+                                       + "<td> [[import|Utilisation de codjo-release-test - Exemples#import]] </td>\n"
+                                       + "<td> Exemple typique de test release d'import. </td>\n"
                                        + "</tr>\n"
                                        + "<tr>\n"
-                                       + "<td>[[broadcast|Utilisation de codjo-release-test - Exemples#broadcast]]</td>\n"
-                                       + "<td>Exemple typique de test release d'export.</td>\n"
+                                       + "<td> [[broadcast|Utilisation de codjo-release-test - Exemples#broadcast]] </td>\n"
+                                       + "<td> Exemple typique de test release d'export. </td>\n"
                                        + "</tr>\n"
-                                       + "</table> \n"
+                                       + "</table> \n\n"
                                        + "blablablaText after\n"
                                        + "<table>\n"
-                                       + "<th>\n"
-                                       + "<td>Propriété</td><td>Description</td><td>Exemple</td></th>\n"
                                        + "<tr>\n"
-                                       + "<td>*```broadcast.output.dir```*</td>\n"
-                                       + "<td>Répertoire de sortie des exports</td>\n"
+                                       + "<th>Propriété</th><th>Description</th><th>Exemple</th></tr>\n"
+                                       + "<tr>\n"
+                                       + "<td>**```broadcast.output.dir```**</td>\n"
+                                       + "<td> Répertoire de sortie des exports</td>\n"
+                                       + "<td>```D:/red/release-test/tmp``` </td>\n"
+                                       + "</tr>\n"
+                                       + "<tr>\n"
+                                       + "<td>**```broadcast.output.remote.dir```**</td>\n"
+                                       + "<td> Répertoire de sortie des exports pour les tests en mode distant.</td>\n"
                                        + "<td>```D:/red/release-test/tmp```</td>\n"
                                        + "</tr>\n"
-                                       + "<tr>\n"
-                                       + "<td>*```broadcast.output.remote.dir```*</td>\n"
-                                       + "<td>Répertoire de sortie des exports pour les tests en mode distant.</td>\n"
-                                       + "<td>```D:/red/release-test/tmp```</td>\n"
-                                       + "</tr>\n"
-                                       + "</table> \n\n"
-                                       + "blablablaText after\n"));
-    }
-
-
-    @Test
-    public void test_wikiTableModifierBug() throws Exception {
-        ConfluenceTranslateTool migrator = new ConfluenceTranslateTool(operations);
-        String modifiedContent = migrator.applyContentModifiers("blablablaText before\n"
-                                                                + "||Propriété || Description || Exemple||\n"
-                                                                + "|*```broadcast.output.dir```*| Répertoire de sortie des exports|```D:/red/release-test/tmp``` |\n"
-                                                                + "|*```broadcast.output.remote.dir```*| Répertoire de sortie des exports pour les tests en mode distant.|```D:/red/release-test/tmp```|"
-                                                                + "\n"
-                                                                + "blablablaText after\n");
-
-        assertThat(modifiedContent, is("blablablaText before\n"
-                                       + "<table>\n"
-                                       + "<th>\n"
-                                       + "<td>Titre</td><td>description</td></th>\n"
-                                       + "<tr>\n"
-                                       + "<td>[[import|Utilisation de codjo-release-test - Exemples#import]]</td>\n"
-                                       + "<td>Exemple typique de test release d'import.</td>\n"
-                                       + "</tr>\n"
-                                       + "<tr>\n"
-                                       + "<td>[[broadcast|Utilisation de codjo-release-test - Exemples#broadcast]]</td>\n"
-                                       + "<td>Exemple typique de test release d'export.</td>\n"
-                                       + "</tr>\n"
-                                       + "</table> \n\n"
-                                       + "blablablaText after\n"));
+                                       + "</table>\n"
+                                       + "blablablaText after"));
     }
 
 
@@ -267,5 +259,15 @@ public class ConfluenceTranslateToolTest {
                 logString.call("postIssue", blogEntry.getTitle(), labelsById);
             }
         };
+    }
+
+
+    @Test
+    public void test_linkInWikiTable() throws Exception {
+        String input = "|UN|DEUX|[[TROIS|QUATRE]]| CINQ [[SIX|SEPT]]|";
+
+        final String result = ConfluenceTranslateTool.transformTableLine(input);
+        assertThat(result,
+                   is("<td>UN</td>\n<td>DEUX</td>\n<td>[[TROIS|QUATRE]]</td>\n<td> CINQ [[SIX|SEPT]]</td>\n"));
     }
 }

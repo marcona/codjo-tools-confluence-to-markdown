@@ -47,7 +47,7 @@ D'autant plus que la liste affichée n'est pas ordonnée.
          <tr>
            <td valign='top'><img src='attachments/forbidden.gif' width='16' height='16' align='absmiddle' alt='' border='0'></td>
            <td><p>
-Il ne faut surtout pas arrêter le plugin gérant cette IHM c'est à dire le *com.agf.administration.server.plugin.AdministrationServerPlugin*.
+Il ne faut surtout pas arrêter le plugin gérant cette IHM c'est à dire le **com.agf.administration.server.plugin.AdministrationServerPlugin**.
 </p></td>
           </tr>
 </table>

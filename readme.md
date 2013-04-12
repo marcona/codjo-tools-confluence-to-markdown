@@ -14,8 +14,9 @@ You'll also have to add the following repository OR activate the ```codjo``` pro
 NB : ```ConfluenceTranslateToolTest``` is in fact an integration test with our Confluence test server. I should mock the confluence server.
 
 TODO :
- * manage wiki table (see Utilisation-de-codjo-release-test)
  * manage accent in page title
+ * manage anchors
+ * manage underline and bold *X* becomes **X** and +X+ becomes <u>X</u> OK but doesn't work in table (inline html)
  * add unit tests foreach modifier
  * verify dead links management (unexisting wiki pages)
  * iterate on all codjo libraries, plugin and tools
@@ -59,6 +60,7 @@ TODO :
 
  
  DONE :
+     - manage wiki table (see Utilisation-de-codjo-release-test)
      - deal with arguments : outputPath, main page name ...etc
      - {{pom.xml}} not traducted
      - Decide wether or not we translate the header menu "project reports | svn | recherche | mantis" --> not for the moment I don't want

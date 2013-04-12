@@ -1,7 +1,6 @@
 package net.codjo.tools.documentation;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +32,8 @@ public class ConfluenceTranslateTool {
         contentModifiers.add(new AgfToCodjoModifier());
         contentModifiers.add(new HeaderModifier());
         contentModifiers.add(new InlineCodeTagModifier());
+        contentModifiers.add(new BoldCodeTagModifier());
+        contentModifiers.add(new UnderLineCodeTagModifier());
         contentModifiers.add(new EndCodeTagModifier());
         contentModifiers.add(new BeginningCodeTagModifier());
         contentModifiers.add(new ConfluenceChangeLogModifier());
@@ -96,12 +97,12 @@ public class ConfluenceTranslateTool {
           throws ConfluenceException {
         final List<BlogEntry> pagesByLabel = operations.getBlogEntriesByLabel(spaceKey, label);
 
+        final File blogEntryDirectory = new File("target/tempBlogContent");
+        blogEntryDirectory.mkdir();
+
         for (BlogEntry blogEntry : pagesByLabel) {
-            final String blogEntryTitle = new AgfToCodjoModifier().modifyContent(blogEntry.getTitle());
             if (blogEntry.getTitle().startsWith(libraryName)) {
                 try {
-                    final File blogEntryDirectory = new File("target/" + blogEntryTitle);
-                    blogEntryDirectory.mkdir();
 
                     final List<Label> labels = operations.getLabelsById(blogEntry.getId());
                     postIssue(libraryName, githubAccount, githubPassword, blogEntry, blogEntryDirectory, labels);
@@ -120,14 +121,15 @@ public class ConfluenceTranslateTool {
                              BlogEntry blogEntry,
                              File blogEntryDirectory, List<Label> labelsById) throws IOException, URISyntaxException {
 
-        final File blogEntryFile = new File(blogEntryDirectory, new URI(blogEntry.getTitle()).toASCIIString());
+        final File blogEntryFile = new File(blogEntryDirectory, "tmp-blogContent.txt");
+        if( blogEntryFile.exists()){
+            blogEntryFile.delete();
+        }                            
         FileUtil.saveContent(blogEntryFile, applyContentModifiers(blogEntry.getContent()));
 
         WindowsExec executor = new WindowsExec();
         StringBuilder cmd = new StringBuilder();
         cmd.append("cmd /c gh postIssue ");
-//        cmd.append(githubAccount).append(" ");
-//        cmd.append(githubPassword).append(" ");
         cmd.append(libraryName).append(" ");
         cmd.append(blogEntry.getTitle()).append(" ");
         cmd.append("closed").append(" ");
@@ -171,6 +173,98 @@ public class ConfluenceTranslateTool {
     }
 
 
+    static List<TableBloc> extractTableBloc(String input) {
+        List<TableBloc> tableBlocs = new ArrayList<TableBloc>();
+        int i = 0;
+        while (i >= 0) {
+            i = input.indexOf("\n||", i) + 1;
+            if (i == 0) {
+                break;
+            }
+            final TableBloc tableBloc = new TableBloc(i);
+            tableBloc.end = findNextEmptyLine(input, tableBloc.start, 0);
+            tableBlocs.add(tableBloc);
+        }
+        return tableBlocs;
+    }
+
+
+    private static int findNextEmptyLine(String input, int startIndex, int endIndex) {
+        final int fromIndex = startIndex > endIndex ? startIndex : endIndex;
+
+        int indexOfNextNewligne = input.indexOf("\n", fromIndex);
+        if (indexOfNextNewligne != -1) {
+            final String substring = input.substring(startIndex, indexOfNextNewligne);
+
+            if (substring.contains("|")) {
+                return findNextEmptyLine(input, indexOfNextNewligne + 1, indexOfNextNewligne + 1);
+            }
+            else {
+                return endIndex;
+            }
+        }
+        else {
+            return endIndex;
+        }
+    }
+
+
+    static String transformTableLine(String input) {
+        StringBuilder builder = new StringBuilder();
+        final String[] strings = input.split("\\|");
+        for (int i = 0; i < strings.length; i++) {
+            String string = strings[i];
+            if (!"".equals(string.trim())) {
+                if (string.contains("[[")) {
+                    i++;
+                    builder.append("<td>").append(string).append("|").append(strings[i]).append("</td>\n");
+                }
+                else {
+                    builder.append("<td>").append(string).append("</td>\n");
+                }
+            }
+        }
+        return builder.toString();
+    }
+
+
+    private String convertWikiTable(String initialContent) {
+        String pattern = "\\|\\|(.*)\\|\\|(.*?)\\|(.*)\\|(.*?)";
+        Matcher matcher = Pattern.compile(pattern, Pattern.DOTALL).matcher(initialContent);
+        String columnHeader = "";
+        String columnsContent = "";
+        if (matcher.find()) {
+            columnHeader = matcher.group(1);
+            columnsContent = "|" + matcher.group(3) + "|";
+        }
+        final String[] columnHeaders = columnHeader.split("\\|\\|");
+        final String[] columnContents = columnsContent.split("\n");
+
+        StringBuilder builder = new StringBuilder("<table>\n");
+        builder.append("<tr>\n");
+        for (String header : columnHeaders) {
+            builder.append("<th>").append(header.trim()).append("</th>");
+        }
+        builder.append("</tr>\n");
+
+        for (String columnContent : columnContents) {
+            final String line = transformTableLine(columnContent);
+            builder.append("<tr>\n").append(line).append("</tr>\n");
+        }
+        builder.append("</table>");
+        final String result;
+        try {
+            result = matcher.replaceAll(builder.toString());
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+
+            return initialContent;
+        }
+        return result;
+    }
+
+
     private interface ContentModifier {
         String modifyContent(String initialContent);
     }
@@ -180,6 +274,22 @@ public class ConfluenceTranslateTool {
             String pattern = "\\{\\{(.*?)\\}\\}";
             Matcher matcher = Pattern.compile(pattern).matcher(initialContent);
             return matcher.replaceAll("```$1```");
+        }
+    }
+
+    private class BoldCodeTagModifier implements ContentModifier {
+        public String modifyContent(String initialContent) {
+            String pattern = "\\*(.*?)\\*";
+            Matcher matcher = Pattern.compile(pattern).matcher(initialContent);
+            return matcher.replaceAll("\\*\\*$1\\*\\*");
+        }
+    }
+
+    private class UnderLineCodeTagModifier implements ContentModifier {
+        public String modifyContent(String initialContent) {
+            String pattern = "\\+(.*?)\\+";
+            Matcher matcher = Pattern.compile(pattern).matcher(initialContent);
+            return matcher.replaceAll("<u>$1</u>");
         }
     }
 
@@ -201,55 +311,26 @@ public class ConfluenceTranslateTool {
 
     private class WikiTableModifier implements ContentModifier {
         public String modifyContent(String initialContent) {
-            String pattern = "\\|\\|(.*)\\|\\|(.*?)\\|(.*)\\|(.*?) ";
-            Matcher matcher = Pattern.compile(pattern, Pattern.DOTALL).matcher(initialContent);
-            String columnHeader = "";
-            String columnsContent = "";
-            if (matcher.find()) {
-                columnHeader = matcher.group(1);
-                columnsContent = "|" + matcher.group(3) + "|";
-            }
-            final String[] columnHeaders = columnHeader.split("\\|\\|");
-            final String[] columnContents = columnsContent.split("\n");
+            initialContent = initialContent.replaceAll("\\$", "CARACTEREDOLLARD");
 
-            StringBuilder builder = new StringBuilder("<table>\n");
-            builder.append("<th>\n");
-            for (String header : columnHeaders) {
-                builder.append("<td>").append(header.trim()).append("</td>");
-            }
-            builder.append("</th>\n");
-
-            for (String columnContent : columnContents) {
-                String tmpPattern = "\\|(.*)\\|";
-                Matcher tmpMmatcher = Pattern.compile(tmpPattern, Pattern.DOTALL).matcher(columnContent);
-
-                if (tmpMmatcher.find()) {
-                    final String[] lineSplitted = tmpMmatcher.group(1).split(" \\| ");
-                    builder.append("<tr>\n");
-                    for (String columnValue : lineSplitted) {
-                        if (!"".equals(columnValue)) {
-                            builder.append("<td>").append(columnValue.trim()).append("</td>").append("\n");
-                        }
-                    }
-                    builder.append("</tr>\n");
+            String result = initialContent;
+            final List<TableBloc> tableBlocs = extractTableBloc(initialContent);
+            if (!tableBlocs.isEmpty()) {
+                StringBuilder builder = new StringBuilder();
+                int start = 0;
+                for (TableBloc tableBloc : tableBlocs) {
+                    String wikiTable = initialContent.substring(tableBloc.start, tableBloc.end);
+                    String htmlTable = convertWikiTable(wikiTable);
+                    builder.append(initialContent.substring(start, tableBloc.start));
+                    builder.append(htmlTable);
+                    start = tableBloc.end;
                 }
+                if (start < initialContent.length() - 1) {
+                    builder.append(initialContent.substring(start, initialContent.length() - 1));
+                }
+                result = builder.toString();
             }
-            builder.append("</table>");
-            final String result;
-            try {
-                result = matcher.replaceAll(builder.toString());
-            }
-            catch (Exception e) {
-                System.out
-                      .println("erreur While translating initialContent = " +
-                               initialContent);
-
-                System.out.println("builder.toString( = " + builder.toString());
-                e.printStackTrace();
-
-                return initialContent;
-            }
-            return result;
+            return result.replaceAll("CARACTEREDOLLARD", "\\$");
         }
     }
 
@@ -364,6 +445,22 @@ public class ConfluenceTranslateTool {
                                             + "          </tr>\r\n"
                                             + "</table>\r\n";
             return matcher.replaceAll(htmlTableForNote);
+        }
+    }
+
+    private static class TableBloc {
+        int start;
+        Integer end;
+
+
+        private TableBloc(int start) {
+            this.start = start;
+        }
+
+
+        @Override
+        public String toString() {
+            return "start: " + start + " end: " + end;
         }
     }
 }
